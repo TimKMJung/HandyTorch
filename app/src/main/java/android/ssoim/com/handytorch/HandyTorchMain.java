@@ -1,5 +1,6 @@
 package android.ssoim.com.handytorch;
 
+import android.Manifest;
 import android.content.DialogInterface;
 import android.content.pm.PackageManager;
 import android.hardware.Camera;
@@ -21,10 +22,8 @@ import com.skyfishjy.library.RippleBackground;
 
 import java.io.IOException;
 
-import static android.Manifest.permission.GET_ACCOUNTS;
 import static android.Manifest.permission.READ_EXTERNAL_STORAGE;
 import static android.Manifest.permission.WRITE_EXTERNAL_STORAGE;
-import static android.Manifest.permission_group.CAMERA;
 
 public class HandyTorchMain extends AppCompatActivity implements SurfaceHolder.Callback{
 
@@ -105,15 +104,17 @@ public class HandyTorchMain extends AppCompatActivity implements SurfaceHolder.C
 
 
     private void init() {
-        int currentapiVersion = android.os.Build.VERSION.SDK_INT;
 
-        if (currentapiVersion >= android.os.Build.VERSION_CODES.M) {
-            if (checkPermission()) {
-                Toast.makeText(getApplicationContext(), "Permission already granted", Toast.LENGTH_LONG).show();
-            } else {
-                requestPermission();
-            }
-        }
+        requestPermission();
+//        int currentapiVersion = android.os.Build.VERSION.SDK_INT;
+//
+//        if (currentapiVersion >= android.os.Build.VERSION_CODES.M) {
+//            if (checkPermission()) {
+//                Toast.makeText(getApplicationContext(), "Permission already granted", Toast.LENGTH_LONG).show();
+//            } else {
+//                requestPermission();
+//            }
+//        }
 
         torchBtn = (Button) findViewById(R.id.torch_btn);
         torchBtn.setOnClickListener(new View.OnClickListener() {
@@ -147,45 +148,46 @@ public class HandyTorchMain extends AppCompatActivity implements SurfaceHolder.C
 
 
     private void setTorchOn() {
+        String permission = Manifest.permission.CAMERA;
+        int grant = ContextCompat.checkSelfPermission(this, permission);
+        
+        if ( grant != PackageManager.PERMISSION_GRANTED) {
+            mTorchBool = false;
 
+            String[] permission_list = new String[1];
+            permission_list[0] = permission;
+            ActivityCompat.requestPermissions(this, permission_list, 1);
 
-        torchBtn.setBackgroundResource(R.drawable.cancel_ic);
-        mRippleEffect.startRippleAnimation();
+        } else {
+            torchBtn.setBackgroundResource(R.drawable.cancel_ic);
+            mRippleEffect.startRippleAnimation();
 
-        try{
-            mCamera = Camera.open(Camera.CameraInfo.CAMERA_FACING_BACK);
-            Camera.Parameters parameters = mCamera.getParameters();
-            parameters.setFlashMode(Camera.Parameters.FLASH_MODE_TORCH);
-            mCamera.setParameters(parameters);
-            mCamera.startPreview();
-        } catch( Exception e ){
-            e.printStackTrace();
+            try{
+                mCamera = Camera.open(Camera.CameraInfo.CAMERA_FACING_BACK);
+                Camera.Parameters parameters = mCamera.getParameters();
+                parameters.setFlashMode(Camera.Parameters.FLASH_MODE_TORCH);
+                mCamera.setParameters(parameters);
+                mCamera.startPreview();
+            } catch( Exception e ){
+                e.printStackTrace();
+            }
+
+            if(mCamera!=null){
+                Camera.Parameters parameters = mCamera.getParameters();
+                parameters.setFlashMode(onTorch);
+                mCamera.setParameters(parameters);
+                mCamera.startPreview();
+
+                try {
+                    mCamera.setPreviewDisplay(mSurfaceHolder);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+
+            }
         }
 
-        if(mCamera!=null){
-//            if( !mTorchEnabled){
 
-//                    Parameters params = mCamera.getParameters();
-//                    params.setFlashMode(onTorch);
-//                    mCamera.setParameters( params );
-//                    mCamera.startPreview();
-
-
-                    Camera.Parameters parameters = mCamera.getParameters();
-                    parameters.setFlashMode(onTorch);
-                    mCamera.setParameters(parameters);
-                    mCamera.startPreview();
-
-                    try {
-                        mCamera.setPreviewDisplay(mSurfaceHolder);
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-
-//                }
-
-//            }
-        }
     }
 
 
@@ -213,17 +215,43 @@ public class HandyTorchMain extends AppCompatActivity implements SurfaceHolder.C
     }
 
 
-    private boolean checkPermission() {
-//        int result = ContextCompat.checkSelfPermission(getApplicationContext(), GET_ACCOUNTS);
-        int result = ContextCompat.checkSelfPermission(getApplicationContext(), CAMERA);
-
-        return result == PackageManager.PERMISSION_GRANTED;
-    }
-
     private void requestPermission() {
-        ActivityCompat.requestPermissions(this, new String[]{GET_ACCOUNTS, CAMERA}, REQUEST_GET_ACCOUNT);
-//        ActivityCompat.requestPermissions(this, new String[]{WRITE_EXTERNAL_STORAGE, READ_EXTERNAL_STORAGE}, PERMISSION_REQUEST_CODE);
+        String permission = Manifest.permission.CAMERA;
+        int grant = ContextCompat.checkSelfPermission(this, permission);
+        if ( grant != PackageManager.PERMISSION_GRANTED) {
+            String[] permission_list = new String[1];
+            permission_list[0] = permission;
+            ActivityCompat.requestPermissions(this, permission_list, 1);
+        } else {
+
+        }
     }
+
+    private void requestPermissionAndTorchOn() {
+        String permission = Manifest.permission.CAMERA;
+        int grant = ContextCompat.checkSelfPermission(this, permission);
+        if ( grant != PackageManager.PERMISSION_GRANTED) {
+            String[] permission_list = new String[1];
+            permission_list[0] = permission;
+            ActivityCompat.requestPermissions(this, permission_list, 1);
+        } else {
+            setTorchOn();
+        }
+    }
+
+
+
+//    private boolean checkPermission() {
+////        int result = ContextCompat.checkSelfPermission(getApplicationContext(), GET_ACCOUNTS);
+//        int result = ContextCompat.checkSelfPermission(getApplicationContext(), CAMERA);
+//
+//        return result == PackageManager.PERMISSION_GRANTED;
+//    }
+//
+//    private void requestPermission() {
+//        ActivityCompat.requestPermissions(this, new String[]{GET_ACCOUNTS, CAMERA}, REQUEST_GET_ACCOUNT);
+////        ActivityCompat.requestPermissions(this, new String[]{WRITE_EXTERNAL_STORAGE, READ_EXTERNAL_STORAGE}, PERMISSION_REQUEST_CODE);
+//    }
 
     public void onRequestPermissionsResult(int requestCode, String permissions[], int[] grantResults) {
         switch (requestCode) {
