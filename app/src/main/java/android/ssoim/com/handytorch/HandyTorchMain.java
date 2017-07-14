@@ -150,7 +150,7 @@ public class HandyTorchMain extends AppCompatActivity implements SurfaceHolder.C
     private void setTorchOn() {
         String permission = Manifest.permission.CAMERA;
         int grant = ContextCompat.checkSelfPermission(this, permission);
-        
+
         if ( grant != PackageManager.PERMISSION_GRANTED) {
             mTorchBool = false;
 
